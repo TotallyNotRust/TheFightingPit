@@ -26,10 +26,10 @@ pub fn new(new_user_json: Json<NewUser>) -> Result<String, Status> {
         None => return Err(Status::InternalServerError),
     };
 
-    insert_into(user).values(new_user.clone()).execute(&mut establish_connection()).expect("Swag not saved");
+    insert_into(user).values(new_user.clone()).execute(&mut establish_connection()).expect("Unable to save new user");
     // Diesel doesnt have a good way to get the id from an insert, so we must fetch the user id ourselves.
-    let users_with_email = user.select(id).filter(email.eq(new_user.email)).load::<u64>(&mut establish_connection()).expect("Could not find user");
-    let new_id = users_with_email.first().unwrap().to_owned();
+    let users_with_email = user.select(id).filter(email.eq(new_user.email)).first::<u64>(&mut establish_connection()).expect("Could not find user");
+    let new_id = users_with_email.to_owned();
 
     Ok(create_jwt(new_id).expect("Could not generate JWT token"))
 }

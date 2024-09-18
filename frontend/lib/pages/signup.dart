@@ -8,7 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:frontend/tokenmanager.dart';
 
 class SignupPage extends StatefulWidget {
-  const SignupPage({super.key});
+  const SignupPage({super.key, required this.origin});
+
+  final String? origin;
 
   @override
   State<SignupPage> createState() => _SignupPageState();
@@ -22,43 +24,45 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          title: Text("Signup"),
-          centerTitle: true,
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              CupertinoTextField(
+    return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            SizedBox(
+              width: 300,
+              child: CupertinoTextField(
                   controller: email,
                   placeholder: "Email"
               ),
-              CupertinoTextField(
-                  controller: email,
+            ),
+            SizedBox(
+              width: 300,
+              child: CupertinoTextField(
+                  controller: username,
                   placeholder: "Username"
               ),
-              CupertinoTextField(
+            ),
+            SizedBox(
+              width: 300,
+              child: CupertinoTextField(
                   controller: password,
                   placeholder: "Password",
                   obscureText: true,
               ),
-              CupertinoButton(child: Text("Signup"), onPressed: () async {
-                  var passdigest = sha256.convert(utf8.encode(password.text));
-                  var passhash = passdigest.toString();
-                  var response = await Dio().post("http://localhost:8000/account/login", data: {
-                    "email": email.text,
-                    "username": username.text,
-                    "password": passhash
-                  });
-                  TokenManager.token = response.data;
-                  print(TokenManager.token);
-                  Beamer.of(context).beamToNamed('/home');
-              })
-            ],
-          ),
-        ));
+            ),
+            CupertinoButton(child: Text("Signup"), onPressed: () async {
+                var passdigest = sha256.convert(utf8.encode(password.text));
+                var passhash = passdigest.toString();
+                var response = await TokenManager.dio.post("http://localhost:8000/account/new", data: {
+                  "email": email.text,
+                  "username": username.text,
+                  "password": passhash
+                });
+                TokenManager.token = response.data;
+                print(TokenManager.token);
+                
+                Beamer.of(context).beamBack();
+            })
+          ],
+        );
   }
 }

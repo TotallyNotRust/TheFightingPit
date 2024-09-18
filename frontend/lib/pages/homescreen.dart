@@ -1,6 +1,7 @@
 import 'package:beamer/beamer.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/menu_area.dart';
+import 'package:frontend/widgets/menu_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,26 +17,23 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          title: Text("Home"),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              onPressed: () {
-                Beamer.of(context).beamToNamed("/profile");
-              },
-              icon: const Icon(Icons.account_circle),
-            )
-          ],
-        ),
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              const Text("Hello SWAG!"),
-              CupertinoButton(child: const Text("Create"), onPressed: () {})
-            ],
+          child: MenuArea(
+            title: Image.asset("tfp_logo.png", height: 300,),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                const SizedBox(height: 8),
+                MenuButton(child: const Text("Tournaments"), onPressed: () {
+                  Beamer.of(context).beamToNamed("/tournaments");
+                }),
+                const SizedBox(height: 8),
+                MenuButton(child: const Text("Profile"), onPressed: () {
+                  Beamer.of(context).beamToNamed("/profile");
+                }),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ));
   }

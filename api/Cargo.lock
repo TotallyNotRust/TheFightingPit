@@ -206,6 +206,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-targets 0.52.6",
 ]
@@ -332,9 +333,11 @@ checksum = "158fe8e2e68695bd615d7e4f3227c0727b151330d3e253b525086c348d055d5e"
 dependencies = [
  "bitflags",
  "byteorder",
+ "chrono",
  "diesel_derives",
  "mysqlclient-sys",
  "percent-encoding",
+ "serde_json",
  "url",
 ]
 
@@ -1532,6 +1535,8 @@ dependencies = [
  "rocket",
  "rocket_cors",
  "serde",
+ "serde_derive",
+ "serde_json",
 ]
 
 [[package]]

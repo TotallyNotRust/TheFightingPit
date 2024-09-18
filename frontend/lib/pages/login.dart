@@ -10,7 +10,9 @@ import 'package:frontend/tokenmanager.dart';
 import 'package:frontend/widgets/menu_area.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({super.key, required this.origin});
+
+  final String? origin;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -23,46 +25,41 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          title: Text("Login"),
-          centerTitle: true,
-        ),
-        body: Center(
-          child: MenuArea(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                SizedBox(
-                  width: 300,
-                  child: CupertinoTextField(
-                      controller: email,
-                      placeholder: "Email"
-                  ),
-                ),
-                SizedBox(
-                  width: 300,
-                  child: CupertinoTextField(
-                      controller: password,
-                      placeholder: "Password",
-                      obscureText: true,
-                  ),
-                ),
-                CupertinoButton(child: Text("Login"), onPressed: () async {
-                    var passdigest = sha256.convert(utf8.encode(password.text));
-                    var passhash = passdigest.toString();
-                    var response = await Dio().post("http://localhost:8000/account/login", data: {
-                      "email": email.text,
-                      "password": passhash
-                    });
-                    TokenManager.token = response.data;
-                    print(TokenManager.token);
-                    Beamer.of(context).beamToNamed('/');
-                })
-              ],
-            ),
+    return  Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        SizedBox(
+          width: 300,
+          child: CupertinoTextField(
+              controller: email,
+              placeholder: "Email"
           ),
-        ));
+        ),
+        SizedBox(
+          width: 300,
+          child: CupertinoTextField(
+              controller: password,
+              placeholder: "Password",
+              obscureText: true,
+          ),
+        ),
+        CupertinoButton(child: Text("Login"), onPressed: () async {
+            var passdigest = sha256.convert(utf8.encode(password.text));
+            var passhash = passdigest.toString();
+            var response = await TokenManager.dio.post("http://localhost:8000/account/login", data: {
+              "email": email.text,
+              "password": passhash
+            });
+            TokenManager.token = response.data;
+            print(response.data);
+            if (widget.origin != null) {
+              Beamer.of(context).beamToNamed("/${widget.origin}");
+            } else {  
+              Beamer.of(context).beamBack();
+            }
+        })
+      ],
+    );
   }
 }

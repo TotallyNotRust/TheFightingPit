@@ -52,6 +52,13 @@ fn rocket() -> _ {
     .mount("/", routes![index, hidden])
     .mount("/account", routes![
         routes::account::new,
-        routes::account::login
+        routes::account::login,
         ])
+    .mount("/tournament", routes![
+        routes::tournament::new,
+        routes::tournament::get,
+        routes::tournament::list,
+        routes::tournament::add_referee,
+        routes::tournament::add_participant,
+    ])
 }

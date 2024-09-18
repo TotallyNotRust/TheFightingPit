@@ -39,6 +39,10 @@ dependencies:
   crypto: ^3.0.3
   jwt_decode: ^0.3.1
   beamer: ^1.6.1
+  custom_sliding_segmented_control: ^1.8.3
+  intl: ^0.19.0
+  shared_preferences: ^2.2.3
+  flutter_spinkit: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -63,9 +67,17 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/tfp_logo.png
+    - assets/tfp_logo_background.png
+
+  fonts:
+    - family: KuenstlerScript
+      fonts:
+        - asset: 'assets/KuenstlerScript.otf'
+    - family: Yellowtail
+      fonts:
+        - asset: 'assets/Yellowtail-Regular.ttf'
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

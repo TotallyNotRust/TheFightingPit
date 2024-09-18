@@ -4,7 +4,7 @@ use rocket::{http::Status, outcome::Outcome, request::{self, FromRequest}, Reque
 use crate::{establish_connection, models::{NetworkResponse, User}, schema::user::dsl::{id as user_id, user}, utils::jwt::decode_jwt};
 
 pub struct ValidatedUser {
-    pub validated_user: User
+    pub user: User
 }
 
 #[rocket::async_trait]
@@ -32,6 +32,6 @@ impl<'r> FromRequest<'r> for ValidatedUser {
                 None => return Outcome::Error((Status::Unauthorized, NetworkResponse::Unauthorized("Invalid JWT".to_owned())))
         };
 
-        return Outcome::Success(ValidatedUser { validated_user });
+        return Outcome::Success(ValidatedUser { user: validated_user });
     }
 }

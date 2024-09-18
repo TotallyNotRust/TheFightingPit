@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:beamer/beamer.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/pages/homescreen.dart';
-import 'package:frontend/pages/login.dart';
+import 'package:frontend/pages/login_signin.dart';
+import 'package:frontend/pages/newtournament.dart';
+import 'package:frontend/pages/tournaments.dart';
 import 'package:frontend/tokenmanager.dart';
 
 void main() {
@@ -13,12 +17,18 @@ class MyApp extends StatelessWidget {
 
   final routerDelegate = BeamerDelegate(
     guards: [
+      
       // Valid token guard; Locks users without a token out of the app.
       BeamGuard(
-        pathPatterns: ['/profile'],
+        pathPatterns: ['/profile', '/new-tournament', "/tournaments"],
         // guardNonMatching: true, // This essentially just mean any route not in pathPatters will be matched here.
         check: (context, location) => TokenManager.tokenIsValid,
-        beamToNamed: (origin, target) => '/login',
+    
+        beamToNamed: (origin, target) {
+          final converted = target.state.routeInformation.uri.path.replaceAll("/", "");
+          
+          return '/login?origin=$converted';
+        },
       )
     ],
     // ignore: implicit_call_tearoffs
@@ -26,21 +36,12 @@ class MyApp extends StatelessWidget {
       routes: {
         // Return either Widgets or BeamPages if more customization is needed
         '/': (context, state, data) => const HomeScreen(),
-        '/login': (context, state, data) => const LoginPage(),
-        // '/books/:bookId': (context, state, data) {
-        //   // Take the path parameter of interest from BeamState
-        //   final bookId = state.pathParameters['bookId']!;
-        //   // Collect arbitrary data that persists throughout navigation
-        //   final info = (data as MyObject).info;
-        //   // Use BeamPage to define custom behavior
-        //   return BeamPage(
-        //     key: ValueKey('book-$bookId'),
-        //     title: 'A Book #$bookId',
-        //     popToNamed: '/',
-        //     type: BeamPageType.scaleTransition,
-        //     child: BookDetailsScreen(bookId, info),
-        //   );
-        // }
+        '/tournaments': (context, state, data) => const TournamentsPage(),
+        '/new-tournament': (context, state, data) => const NewTournamentPage(),
+        '/login': (context, state, data) {
+          final origin = state.queryParameters['origin']!;
+          return LoginSignupPage(origin: origin);
+        }
       },
     ),
   );
@@ -57,14 +58,20 @@ class MyApp extends StatelessWidget {
     //     "/login": (context) => const MyHomePage(title: 'The Fighting Pit'),
     //   }
     // );
+    WidgetsFlutterBinding.ensureInitialized();
+    TokenManager.initialize();
+    
     return MaterialApp.router(
       routeInformationParser: BeamerParser(),
       routerDelegate: routerDelegate,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.white).copyWith(
-          background: const Color.fromARGB(255, 238, 229, 211)
-        )
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color.fromARGB(255, 15, 42, 28))
+          .copyWith(
+          background: const Color.fromARGB(255, 238, 229, 211),
+        ),
+        useMaterial3: true
       ),
     );
   }

@@ -1,7 +1,7 @@
 -- Your SQL goes here
 CREATE TABLE tournament (
 	id bigint unsigned not null auto_increment,
-    name varchar(64) unique not null,
+    name varchar(64) not null,
     slots int unsigned not null,
     start_datetime datetime not null,
     owner_id bigint unsigned not null,

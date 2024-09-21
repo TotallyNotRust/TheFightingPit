@@ -17,7 +17,6 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-
   TextEditingController email = TextEditingController();
   TextEditingController username = TextEditingController();
   TextEditingController password = TextEditingController();
@@ -25,44 +24,59 @@ class _SignupPageState extends State<SignupPage> {
   @override
   Widget build(BuildContext context) {
     return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            SizedBox(
-              width: 300,
-              child: CupertinoTextField(
-                  controller: email,
-                  placeholder: "Email"
-              ),
-            ),
-            SizedBox(
-              width: 300,
-              child: CupertinoTextField(
-                  controller: username,
-                  placeholder: "Username"
-              ),
-            ),
-            SizedBox(
-              width: 300,
-              child: CupertinoTextField(
-                  controller: password,
-                  placeholder: "Password",
-                  obscureText: true,
-              ),
-            ),
-            CupertinoButton(child: Text("Signup"), onPressed: () async {
-                var passdigest = sha256.convert(utf8.encode(password.text));
-                var passhash = passdigest.toString();
-                var response = await TokenManager.dio.post("http://localhost:8000/account/new", data: {
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        SizedBox(
+          width: 300,
+          child: CupertinoTextField(
+            controller: email,
+            placeholder: "Email",
+          ),
+        ),
+        SizedBox(
+          width: 300,
+          child: CupertinoTextField(
+            controller: username,
+            placeholder: "Username",
+          ),
+        ),
+        SizedBox(
+          width: 300,
+          child: CupertinoTextField(
+            controller: password,
+            placeholder: "Password",
+            obscureText: true,
+          ),
+        ),
+        CupertinoButton(
+            child: Text("Signup"),
+            onPressed: () async {
+              var passdigest = sha256.convert(utf8.encode(password.text));
+              var passhash = passdigest.toString();
+              var response = await TokenManager.dio.post(
+                "/account/new",
+                data: {
                   "email": email.text,
                   "username": username.text,
                   "password": passhash
-                });
-                TokenManager.token = response.data;
-                print(TokenManager.token);
-                
+                },
+              );
+
+              if (response.statusCode != 200) {
+                print(response.statusCode);
+                return;
+              }
+
+              TokenManager.token = response.data;
+              print(TokenManager.token);
+
+              if (widget.origin != null) {
+                Beamer.of(context).beamToNamed((widget.origin ?? "/").replaceAll("-", "/"));
+              } else {
                 Beamer.of(context).beamBack();
+              }
             })
-          ],
-        );
+      ],
+    );
   }
 }

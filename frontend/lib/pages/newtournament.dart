@@ -18,7 +18,7 @@ class NewTournamentPage extends StatefulWidget {
 
 class _NewTournamentPageState extends State<NewTournamentPage> {
   TextEditingController name = TextEditingController();
-  TextEditingController slots = TextEditingController();
+  int? slots;
   TextEditingController datetime = TextEditingController();
   DateTime? datetime_raw;
 
@@ -40,12 +40,31 @@ class _NewTournamentPageState extends State<NewTournamentPage> {
                 child:
                     CupertinoTextField(controller: name, placeholder: "Name"),
               ),
+              // SizedBox(
+              //   width: 300,
+              //   child: CupertinoTextField(
+              //     controller: slots,
+              //     placeholder: "Slots",
+              //     keyboardType: TextInputType.number,
+              //   ),
+              // ),
               SizedBox(
                 width: 300,
-                child: CupertinoTextField(
-                  controller: slots,
-                  placeholder: "Slots",
-                  keyboardType: TextInputType.number,
+                child: DropdownButton<int>(
+                  value: slots,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 32,
+                      child: Text("32 Player"),
+                    ),
+                    DropdownMenuItem(
+                      value: 4,
+                      child: Text("4 Player"),
+                    )
+                  ],
+                  onChanged: (int? value) {
+                    setState(() {slots = value;});
+                  },
                 ),
               ),
               SizedBox(
@@ -55,32 +74,46 @@ class _NewTournamentPageState extends State<NewTournamentPage> {
                   placeholder: "Date & Time",
                   readOnly: true,
                   onTap: () async {
-                    DateTime? time = await showDatePicker(
+                    DateTime? date = await showDatePicker(
                       context: context,
-                      firstDate: DateTime.now(), 
+                      firstDate: DateTime.now(),
                       lastDate: DateTime.parse("9999-12-31"),
                     );
-                    if (time != null) {
-                      datetime.text = DateFormat("E MMM d y").format(time);
+
+                    if (date != null) {
+                      TimeOfDay? time = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay(hour: 12, minute: 0),
+                          builder: (BuildContext context, Widget? child) {
+                          return MediaQuery(
+                            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                            child: child ?? const SizedBox(),
+                          );
+                        },
+                      );
+
+                      if (time == null) return;
+
+                      date = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+
+                      datetime.text = DateFormat("E MMM d y HH:mm").format(date);
                       setState(() {
-                        datetime_raw = time;
+                        datetime_raw = date;
                       });
                     }
                   },
-
                 ),
               ),
               CupertinoButton(
                   child: Text("Create"),
                   onPressed: () async {
-
                     var response = await TokenManager.dio
-                        .post("http://localhost:8000/tournament/new", data: {
+                        .post("/tournament/new", data: {
                       "name": name.text,
-                      "slots": int.parse(slots.text),
+                      "slots": slots,
                       "start_datetime": datetime_raw?.toIso8601String(),
                     });
-                    
+
                     Beamer.of(context).beamBack();
                   })
             ],

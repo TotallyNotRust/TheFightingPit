@@ -1,6 +1,8 @@
+import 'package:beamer/beamer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/models/tournament.dart';
+import 'package:frontend/tokenmanager.dart';
 import 'package:intl/intl.dart';
 
 class TournamentListElement extends StatelessWidget {
@@ -28,7 +30,9 @@ class TournamentListElement extends StatelessWidget {
             Text(DateFormat("dd-MM-yyyy hh:mm:ss").format(tournament.date)),
             const SizedBox(width: 8.0,),
             IconButton(onPressed: () {}, icon: const Icon(Icons.share)),
-            IconButton(onPressed: () {}, icon: const Icon(Icons.edit)),
+            IconButton(onPressed: () {
+              Beamer.of(context).beamToNamed("/tournament/${tournament.id}");
+            }, icon: const Icon(Icons.edit)),
             IconButton(onPressed: () {}, icon: const Icon(Icons.delete, color: Colors.red,)),
             const SizedBox(width: 8.0,)
           ],

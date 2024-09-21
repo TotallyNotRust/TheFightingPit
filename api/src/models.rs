@@ -1,5 +1,6 @@
+use bracket_match::next_match_id;
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
-use diesel::{prelude::Insertable, Associations, Identifiable, Queryable, Selectable};
+use diesel::{prelude::{AsChangeset, Insertable}, Associations, Identifiable, Queryable, Selectable};
 use serde::{Deserialize, Serialize};
 
 use crate::schema::*;
@@ -14,6 +15,7 @@ use crate::schema::*;
 #[diesel(table_name = user)]
 pub struct User {
     pub id: u64,
+    #[serde(skip_serializing)] 
     pub email: String,
     pub username: String,
     #[serde(skip_serializing)] // Avoid sending the password back to the user by never serializing it.
@@ -133,6 +135,67 @@ pub struct NewParticipant {
     pub tournament_id: u64,
 }
 
+#[derive(
+    Queryable, Eq, Insertable, Identifiable, Debug, PartialEq, Clone, Deserialize, Serialize, AsChangeset
+)]
+#[diesel(table_name = bracket_match)]
+pub struct BracketMatch {
+    pub id: u64,
+    pub tournament_id: u64,
+    pub player1_id: Option<u64>,
+    pub player2_id: Option<u64>,
+    pub ref_id: Option<u64>,
+    pub next_match_id: Option<u64>, 
+    pub winner_id: Option<u64>,
+
+    pub score_1: u32,
+    pub score_2: u32,
+
+    pub round: u32,
+    pub starting_round: bool,
+    pub final_round: bool,
+    pub semi_final_round: bool,
+}
+
+#[derive(
+    Queryable, Eq, Insertable, Debug, PartialEq, Clone, Deserialize, Serialize,
+)]
+#[diesel(table_name = bracket_match)]
+pub struct NewBracketMatch {
+    pub tournament_id: u64,
+    pub player1_id: Option<u64>,
+    pub player2_id: Option<u64>,
+    pub ref_id: Option<u64>,
+    pub next_match_id: Option<u64>, 
+    pub winner_id: Option<u64>,
+
+    pub score_1: u32,
+    pub score_2: u32,
+
+    pub round: u32,
+    pub starting_round: bool,
+    pub final_round: bool,
+    pub semi_final_round: bool,
+}
+
+impl NewBracketMatch {
+    pub fn empty_for(tournament_id: u64, next_match: Option<u64>, starting_round: bool) -> Self {
+        NewBracketMatch{
+            tournament_id: tournament_id,
+            player1_id: None,
+            player2_id: None,
+            ref_id: None, 
+            next_match_id: next_match,
+            winner_id: None,
+            score_1: 0,
+            score_2: 0,
+            round: 0,
+            starting_round: starting_round,
+            final_round: false,
+            semi_final_round: false,
+        }
+    }
+}
 
 // |*********************|
 // |   NOT DB RELATED    |

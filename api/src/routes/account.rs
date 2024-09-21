@@ -21,6 +21,14 @@ pub fn new(new_user_json: Json<NewUser>) -> Result<String, Status> {
 
     let mut new_user = new_user_json.0;
 
+    if new_user.username.len() <= 0 {
+        return Err(Status::BadRequest);
+    }
+
+    if new_user.username.len() <= 0 {
+        return Err(Status::BadRequest);
+    }
+
     new_user.password = match bcrypt_hash(&new_user.password) {
         Some(n) => n,
         None => return Err(Status::InternalServerError),
@@ -42,7 +50,7 @@ pub fn login(login: Json<Login>) -> Result<String, Status> {
         .filter(
             email
                 .eq(submitted_email.to_owned())
-        )
+        ) 
         .load::<User>(&mut establish_connection()) {
             Ok(n) => {
                 if n.len() == 0 {

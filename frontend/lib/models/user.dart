@@ -3,22 +3,18 @@ import 'dart:convert';
 
 class User {
     final int id;
-    final String email;
     final String username;
   User({
     required this.id,
-    required this.email,
     required this.username,
   });
 
   User copyWith({
     int? id,
-    String? email,
     String? username,
   }) {
     return User(
       id: id ?? this.id,
-      email: email ?? this.email,
       username: username ?? this.username,
     );
   }
@@ -26,7 +22,6 @@ class User {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'id': id,
-      'email': email,
       'username': username,
     };
   }
@@ -34,7 +29,6 @@ class User {
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
       id: map['id'] as int,
-      email: map['email'] as String,
       username: map['username'] as String,
     );
   }
@@ -44,7 +38,7 @@ class User {
   factory User.fromJson(String source) => User.fromMap(json.decode(source) as Map<String, dynamic>);
 
   @override
-  String toString() => 'User(id: $id, email: $email, username: $username)';
+  String toString() => 'User(id: $id, username: $username)';
 
   @override
   bool operator ==(covariant User other) {
@@ -52,10 +46,9 @@ class User {
   
     return 
       other.id == id &&
-      other.email == email &&
       other.username == username;
   }
 
   @override
-  int get hashCode => id.hashCode ^ email.hashCode ^ username.hashCode;
+  int get hashCode => id.hashCode ^ username.hashCode;
 }

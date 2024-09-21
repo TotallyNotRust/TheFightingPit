@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:jwt_decode/jwt_decode.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,7 +9,9 @@ class TokenManager {
 
   static String? _token;
 
-  static Dio dio = Dio();
+  static Dio dio = Dio(
+    BaseOptions(baseUrl: dotenv.get("SERVER_ADRESS", fallback: "http://localhost:8000"))
+  );
 
   static Future<int> initialize() async {
     token = (await SharedPreferences.getInstance()).getString("JWT_TOKEN");

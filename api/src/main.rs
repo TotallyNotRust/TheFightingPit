@@ -4,7 +4,7 @@ use crate::guards::validated_user::ValidatedUser;
 use rocket::http::Method;
 
 
-use diesel::{define_sql_function, Connection, MysqlConnection};
+use diesel::{define_sql_function, dsl::select, Connection, MysqlConnection, RunQueryDsl};
 use dotenvy::dotenv;
 use rocket_cors::{AllowedOrigins, CorsOptions};
 
@@ -13,6 +13,12 @@ mod models;
 mod routes;
 mod utils;
 mod guards;
+
+define_sql_function!(fn last_insert_id() -> Unsigned<BigInt>;);
+
+fn get_last_insert_id(conn: &mut MysqlConnection) -> u64 {
+    select(last_insert_id()).first::<u64>(conn).expect("Could not get last insert id")
+}
 
 fn establish_connection() -> MysqlConnection {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -57,6 +63,8 @@ fn rocket() -> _ {
     .mount("/tournament", routes![
         routes::tournament::new,
         routes::tournament::get,
+        routes::tournament::get_brackets,
+        routes::tournament::get_players,
         routes::tournament::list,
         routes::tournament::add_referee,
         routes::tournament::add_participant,

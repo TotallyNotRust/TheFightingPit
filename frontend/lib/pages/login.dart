@@ -47,14 +47,14 @@ class _LoginPageState extends State<LoginPage> {
         CupertinoButton(child: Text("Login"), onPressed: () async {
             var passdigest = sha256.convert(utf8.encode(password.text));
             var passhash = passdigest.toString();
-            var response = await TokenManager.dio.post("http://localhost:8000/account/login", data: {
+            var response = await TokenManager.dio.post("/account/login", data: {
               "email": email.text,
               "password": passhash
             });
             TokenManager.token = response.data;
             print(response.data);
             if (widget.origin != null) {
-              Beamer.of(context).beamToNamed("/${widget.origin}");
+              Beamer.of(context).beamToNamed((widget.origin ?? "/").replaceAll("-", "/"));
             } else {  
               Beamer.of(context).beamBack();
             }

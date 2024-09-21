@@ -9,7 +9,7 @@ class Tournament {
   final String name;
   final DateTime date;
   final int slots;
-  final User owner;
+  final User? owner;
 
   Tournament(
     this.id,
@@ -41,7 +41,7 @@ class Tournament {
       'name': name,
       'date': date.millisecondsSinceEpoch,
       'slots': slots,
-      'owner': owner.toMap(),
+      'owner': owner?.toMap(),
     };
   }
 
@@ -93,7 +93,7 @@ class Tournament {
       tournament_list["name"],
       tournament_list["start_datetime"] != null ? DateFormat("yyyy-MM-dd'T'hh:mm:ss").parse(tournament_list["start_datetime"]) : DateTime.now(),
       tournament_list["slots"],
-      User.fromMap(user_items)
+      user_items != null ? User.fromMap(user_items) : null,
     );
   }
 }

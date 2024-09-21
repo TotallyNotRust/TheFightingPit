@@ -18,7 +18,9 @@ import 'package:frontend/widgets/title_text.dart';
 import 'package:frontend/widgets/tournament_list_element.dart';
 
 class TournamentsPage extends StatefulWidget {
-  const TournamentsPage({super.key});
+  TournamentsPage({super.key});
+
+  final ScrollController scrollController = ScrollController();
 
   @override
   State<TournamentsPage> createState() => _TournamentsPageState();
@@ -48,18 +50,22 @@ class _TournamentsPageState extends State<TournamentsPage> {
                   padding: EdgeInsets.all(8.0),
                   child: FutureBuilder(
                       future: TokenManager.dio
-                          .get("http://localhost:8000/tournament/list"),
-                      builder: (context, data) {
-                        if (!data.hasData)
-                          return SpinKitWanderingCubes(
-                            color: Colors.white,
+                          .get("/tournament/list"),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const SpinKitCubeGrid(
+                            size: 20,
+                            color: Colors.black,
                           );
-                        final List<dynamic> body = data.data!.data;
+                        }
+                        final List<dynamic> body = snapshot.data!.data;
                         return SizedBox(
                           height: 200,
                           child: Scrollbar(
+                            controller: widget.scrollController,
                             thumbVisibility: true,
                             child: ListView.builder(
+                              controller: widget.scrollController,
                               itemCount: body.length,
                               itemBuilder: (context, i) {
                                 return Padding(

@@ -16,8 +16,8 @@ class BracketsDisplay extends StatefulWidget {
       required this.brackets,
       required this.players});
 
-  final Completer<List<List<Bracket>>> brackets;
-  final Completer<List<Participant>> players;
+  final List<List<Bracket>> brackets;
+  final List<Participant> players;
   final int tournamentId;
 
   @override
@@ -27,42 +27,26 @@ class BracketsDisplay extends StatefulWidget {
 class _BracketsDisplayState extends State<BracketsDisplay> {
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: Future.wait([
-        widget.brackets.future,
-        widget.players.future,
-      ]),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SpinKitCubeGrid(
-            size: 20,
-            color: Colors.black,
-          );
-        }
-        List<List<Bracket>> brackets = snapshot.data![0] as List<List<Bracket>>;
-        List<Participant> players = snapshot.data![1] as List<Participant>;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (List<Bracket> brackets in brackets.reversed)
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  for (Bracket bracket in brackets)
-                    BracketDisplay(bracket: bracket)
-                ],
-              )
-          ],
-        );
-      },
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (List<Bracket> brackets in widget.brackets.reversed)
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (Bracket bracket in brackets) BracketDisplay(bracket: bracket, players: widget.players)
+            ],
+          )
+      ],
     );
   }
 }
 
 class BracketDisplay extends StatelessWidget {
-  const BracketDisplay({super.key, required this.bracket});
+  const BracketDisplay({super.key, required this.bracket, required this.players});
 
   final Bracket bracket;
+  final List<Participant> players;
 
   @override
   Widget build(BuildContext context) {
@@ -83,11 +67,11 @@ class BracketDisplay extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     bracket.player1_id != null
-                        ? Text(bracket.player1_id.toString())
+                        ? Text(players.firstWhere((element) => element.id == bracket.player1_id).user.username)
                         : const Text("TBD"),
                     const Divider(),
                     bracket.player2_id != null
-                        ? Text(bracket.player2_id.toString())
+                        ? Text(players.firstWhere((element) => element.id == bracket.player2_id).user.username)
                         : const Text("TBD"),
                   ],
                 ),

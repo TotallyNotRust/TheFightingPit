@@ -34,6 +34,18 @@ impl User {
 }
 
 #[derive(
+    Queryable, Eq, Insertable, Identifiable, Debug, PartialEq, Clone, Deserialize, Serialize,
+)]
+#[diesel(table_name = user)]
+pub struct UserWithEmail {
+    pub id: u64,
+    pub email: String,
+    pub username: String,
+    #[serde(skip_serializing)] // Avoid sending the password back to the user by never serializing it.
+    pub password: String
+}
+
+#[derive(
     Eq, Insertable, Debug, PartialEq, Clone, Deserialize, Serialize,
 )]
 #[diesel(table_name = user)]

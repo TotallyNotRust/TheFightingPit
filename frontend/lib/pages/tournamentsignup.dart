@@ -31,9 +31,9 @@ class _TournamentSignupPageState extends State<TournamentSignupPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         // Sign up user.
-                        TokenManager.dio.post("/tournament/${widget.tournamentId}/signup");
+                        await TokenManager.dio.post("/tournament/${widget.tournamentId}/signup");
 
                         Beamer.of(context)
                             .beamToNamed("/tournament/${widget.tournamentId}");

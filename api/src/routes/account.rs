@@ -1,12 +1,12 @@
-use crate::guards::validated_user::{self, ValidatedUser};
+use crate::guards::validated_user::ValidatedUser;
 use crate::schema::user::dsl::user;
-use crate::schema::user::{email, id, username};
+use crate::schema::user::{email, id};
 use crate::utils::hashing::bcrypt_hash;
 use crate::utils::jwt::create_jwt;
 use crate::{establish_connection, models::*};
 use bcrypt::verify;
-use diesel::dsl::{insert_into, sql};
-use diesel::{BoolExpressionMethods, ExpressionMethods, Identifiable, QueryDsl, RunQueryDsl};
+use diesel::dsl::insert_into;
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use regex::Regex;
 use rocket::http::Status;
 use rocket::serde::json::Json;

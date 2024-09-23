@@ -46,7 +46,7 @@ fn rocket() -> _ {
     let cors = CorsOptions::default()
     .allowed_origins(AllowedOrigins::all())
     .allowed_methods(
-        vec![Method::Get, Method::Post, Method::Patch]
+        vec![Method::Get, Method::Post, Method::Patch, Method::Delete]
             .into_iter()
             .map(From::from)
             .collect(),
@@ -67,7 +67,11 @@ fn rocket() -> _ {
         routes::tournament::get_brackets,
         routes::tournament::get_players,
         routes::tournament::list,
+        routes::tournament::get_referees,
         routes::tournament::add_referee,
+        routes::tournament::del_referee,
         routes::tournament::add_participant,
+        routes::tournament::permissions,
+        routes::tournament::update_score,
     ])
 }

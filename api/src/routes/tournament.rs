@@ -1,28 +1,28 @@
 use diesel::{
-    dsl::insert_into, update, BoolExpressionMethods, ExpressionMethods, OptionalExtension,
-    QueryDsl, RunQueryDsl,
+    dsl::{delete, insert_into}, update, BoolExpressionMethods, ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl
 };
 use rocket::{http::Status, serde::json::Json};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     establish_connection, get_last_insert_id,
     guards::validated_user::ValidatedUser,
     models::{
         BracketMatch, NewParticipant, NewReferee, NewTournament, NewTournamentWithOwner,
-        Participant, Tournament, TournamentWithOwnerUser, User,
+        Participant, Referee, Tournament, User,
     },
     schema::{
         bracket_match::{
             dsl::{bracket_match, id as b_id, starting_round, tournament_id as bt_id},
-            player1_id, player2_id,
+            player1_id, player2_id, score_1, score_2,
         },
-        participant::dsl::{id as p_id, user_id as pu_id, participant, tournament_id as pt_id},
-        referee::dsl::referee,
+        participant::dsl::{participant, tournament_id as pt_id, user_id as pu_id},
+        referee::dsl::{id as r_id, referee, tournament_id as rt_id, user_id as ru_id},
         tournament::{
             dsl::{id as t_id, tournament},
-            name, owner_id,
+            owner_id,
         },
-        user::dsl::user,
+        user::{dsl::user, email, id as u_id},
     },
     utils::bracket_generator::generate_brackets,
 };
@@ -51,11 +51,11 @@ pub fn new(
     Ok(Json(saved_tournament))
 }
 
-#[get("/get/<id>")]
-pub fn get(id: u64) -> Result<Json<(Tournament, Option<User>)>, Status> {
+#[get("/<tournament_id>")]
+pub fn get(tournament_id: u64) -> Result<Json<(Tournament, Option<User>)>, Status> {
     return match tournament
         .left_join(user)
-        .filter(t_id.eq(id))
+        .filter(t_id.eq(tournament_id))
         .first::<(Tournament, Option<User>)>(&mut establish_connection())
     {
         Ok(n) => Ok(Json(n)),
@@ -63,7 +63,7 @@ pub fn get(id: u64) -> Result<Json<(Tournament, Option<User>)>, Status> {
     };
 }
 
-#[get("/get/<id>/brackets")]
+#[get("/<id>/brackets")]
 pub fn get_brackets(id: u64) -> Result<Json<Vec<BracketMatch>>, Status> {
     return match bracket_match
         .filter(bt_id.eq(id))
@@ -74,7 +74,7 @@ pub fn get_brackets(id: u64) -> Result<Json<Vec<BracketMatch>>, Status> {
     };
 }
 
-#[get("/get/<id>/players")]
+#[get("/<id>/players")]
 pub fn get_players(id: u64) -> Result<Json<Vec<(Participant, Option<User>)>>, Status> {
     return match participant
         .left_join(user)
@@ -114,24 +114,79 @@ pub fn can_edit_tournament(tournament_id: u64, user_id: u64) -> bool {
     return false;
 }
 
-#[post("/<tournament_id>/referee/<user_id>")]
+#[post("/<tournament_id>/referee", format = "application/json", data = "<email_list>")]
 pub fn add_referee(
     tournament_id: u64,
-    user_id: u64,
+    email_list: Json<Vec<String>>,
     validated_user: ValidatedUser,
 ) -> Result<&'static str, Status> {
     if !can_edit_tournament(tournament_id, validated_user.user.id) {
         return Err(Status::Unauthorized);
     }
 
-    let new_referee = NewReferee {
-        user_id,
-        tournament_id: tournament_id,
-    };
+    let conn = &mut establish_connection();
+
+    let mut referees: Vec<NewReferee> = vec![];
+
+    // Create list of new referess, and fail if one is not found
+    'emails: for u_email in email_list.0 {
+        let Ok(user_id) = user.filter(email.eq(u_email)).select(u_id).first::<u64>(conn) else {
+            return Err(Status::BadRequest);
+        };
+
+        println!("Got user {:?}", user_id);
+
+        // Ensure user is not already registered
+        match referee.filter(rt_id.eq(tournament_id).and(ru_id.eq(user_id))).first::<Referee>(conn).optional() {
+            Ok(None) => {} // The user has not yet been registered.
+            _ => {
+                println!("User already registered as ref, skipping");
+                continue 'emails;
+            }
+        }
+
+        referees.push(NewReferee {
+            user_id,
+            tournament_id: tournament_id,
+        });
+    }
+
+    println!("Adding referees: {:?}", referees);
+    
     insert_into(referee)
-        .values(new_referee)
-        .execute(&mut establish_connection())
+        .values(referees)
+        .execute(conn)
         .expect("Could not add referee");
+
+    Ok("")
+}
+
+#[get("/<tournament_id>/referee")]
+pub fn get_referees(tournament_id: u64) -> Result<Json<Vec<(Referee, Option<User>)>>, Status> {
+    return match referee
+        .left_join(user)
+        .filter(rt_id.eq(tournament_id))
+        .load::<(Referee, Option<User>)>(&mut establish_connection())
+    {
+        Ok(n) => {
+            println!("💥 {:?}", n);
+            Ok(Json(n))
+        },
+        Err(_) => Err(Status::NotFound),
+    };
+}
+
+#[delete("/<tournament_id>/referee/<referee_id>")]
+pub fn del_referee(
+    tournament_id: u64,
+    referee_id: u64,
+    validated_user: ValidatedUser,
+) -> Result<&'static str, Status> {
+    if !can_edit_tournament(tournament_id, validated_user.user.id) {
+        return Err(Status::Unauthorized);
+    }
+
+    delete(referee.filter(r_id.eq(referee_id))).execute(&mut establish_connection());
 
     Ok("")
 }
@@ -157,7 +212,10 @@ pub fn add_participant(
             return Err(Status::NotAcceptable);
         }
         Ok(Some(n)) => {
-            println!("{:?}, {:?}, {:?}", n, validated_user.user.id, validated_user.user.username);
+            println!(
+                "{:?}, {:?}, {:?}",
+                n, validated_user.user.id, validated_user.user.username
+            );
             return Err(Status::NotAcceptable);
         }
     }
@@ -228,4 +286,71 @@ pub fn add_participant(
         .execute(conn);
 
     Ok("")
+}
+
+#[derive(Deserialize)]
+struct Scoreline {
+    pub score_1: u32,
+    pub score_2: u32,
+}
+
+// TODO: It may be nice to implement some kind of lock to avoid dataraces in the future, but for now it is only intended to have
+#[post(
+    "/<id>/brackets/<bracket_id>/updatescore",
+    format = "application/json",
+    data = "<scoreline>"
+)]
+pub fn update_score(
+    id: u64,
+    bracket_id: u64,
+    scoreline: Json<Scoreline>,
+    validated_user: ValidatedUser,
+) -> Result<&'static str, Status> {
+    let conn = &mut establish_connection();
+    let user_id = validated_user.user.id;
+    // Get the bracket
+    let Ok(Some(_)) = bracket_match
+        .filter(b_id.eq(bracket_id).and(bt_id.eq(id)))
+        .load::<BracketMatch>(conn)
+        .optional()
+    else {
+        return Err(Status::NotFound);
+    };
+
+    // // Ensure user is referee for tournament
+    let Ok(Some(_referee)) = referee
+        .filter(ru_id.eq(user_id).and(rt_id.eq(id)))
+        .first::<Referee>(conn)
+        .optional()
+    else {
+        return Err(Status::Unauthorized);
+    };
+
+    // Update the brackets
+    let _ = update(bracket_match)
+        .filter(b_id.eq(bracket_id))
+        .set((
+            score_1.eq(scoreline.0.score_1),
+            score_2.eq(scoreline.0.score_2),
+        ))
+        .execute(conn);
+
+    Ok("")
+}
+
+#[derive(Serialize)]
+pub struct TournamentPermissions {
+    pub is_referee: bool,
+}
+
+#[get("/<id>/permissions")]
+pub fn permissions(id: u64, validated_user: ValidatedUser) -> Result<Json<TournamentPermissions>, Status> {
+    let is_referee = match referee.filter(ru_id.eq(validated_user.user.id).and(rt_id.eq(id))).first::<Referee>(&mut establish_connection()).optional() {
+        Ok(Some(_)) => true,
+        _ => false,
+    };
+
+    return Ok(Json(TournamentPermissions {
+        is_referee
+    }));
 }

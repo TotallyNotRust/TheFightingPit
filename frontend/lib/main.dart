@@ -4,14 +4,18 @@ import 'package:beamer/beamer.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:frontend/formatting.dart';
 import 'package:frontend/models/bracket.dart';
 import 'package:frontend/models/participant.dart';
+import 'package:frontend/models/referee.dart';
 import 'package:frontend/models/tournament.dart';
+import 'package:frontend/models/tournament_permissions.dart';
 import 'package:frontend/pages/homescreen.dart';
 import 'package:frontend/pages/login_signin.dart';
 import 'package:frontend/pages/newtournament.dart';
 import 'package:frontend/pages/profile.dart';
 import 'package:frontend/pages/tournament.dart';
+import 'package:frontend/pages/tournament_settings.dart';
 import 'package:frontend/pages/tournaments.dart';
 import 'package:frontend/pages/tournamentsignup.dart';
 import 'package:frontend/tokenmanager.dart';
@@ -32,7 +36,8 @@ class MyApp extends StatelessWidget {
           '/profile',
           '/new-tournament',
           "/tournaments",
-          RegExp("/tournament/.*/signup")
+          RegExp("/tournament/.*/signup"),
+          RegExp("/tournament/.*/settings")
         ],
         // guardNonMatching: true, // This essentially just mean any route not in pathPatters will be matched here.
         check: (context, location) => TokenManager.tokenIsValid,
@@ -60,27 +65,60 @@ class MyApp extends StatelessWidget {
           final id = int.parse(state.pathParameters['id']!);
 
           return BeamPage(
-            key: ValueKey("tournament_page_$id\_" + DateTime.now().microsecondsSinceEpoch.toString()),
+            key: ValueKey(
+                "tournament_page_${id}_${DateTime.now().microsecondsSinceEpoch}"),
             child: FutureBuilder(
-              key: ValueKey(DateTime.now().microsecondsSinceEpoch.toString() + "SWAG"),
                 future: Future.wait([
-                  formatTournamentFromResponse(TokenManager.dio.get("/tournament/get/$id")),
-                  formatBracketsFromResponse(TokenManager.dio.get("/tournament/get/$id/brackets")),
-                  formatParticipantsFromResponse(TokenManager.dio.get("/tournament/get/$id/players")),
+                  Formatter.formatTournamentFromResponse(
+                    TokenManager.dio.get("/tournament/$id"),
+                  ),
+                  Formatter.formatBracketsFromResponse(
+                    TokenManager.dio.get("/tournament/$id/brackets"),
+                  ),
+                  Formatter.formatParticipantsFromResponse(
+                    TokenManager.dio.get("/tournament/$id/players"),
+                  ),
+                  TokenManager.tokenIsValid ?
+                  Formatter.formatTournamentPermissionsFromResponse(
+                    TokenManager.dio.get("/tournament/$id/permissions"),
+                  ) : Future(() => TournamentPermissions.none())
                 ]),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) return SizedBox();
+                  if (!snapshot.hasData) return Scaffold(body: Text("SWAG"),);
                   return TournamentPage(
                       tournament: snapshot.data![0] as Tournament,
                       brackets: snapshot.data![1] as List<List<Bracket>>,
-                      players: snapshot.data![2] as List<Participant>);
+                      players: snapshot.data![2] as List<Participant>,
+                      permissions: snapshot.data![3] as TournamentPermissions);
                 }),
           );
         },
         '/tournament/:id/signup': (context, state, data) {
           final id = int.parse(state.pathParameters['id']!);
 
-          return BeamPage(key: ValueKey("tournament-signup-page"),child: TournamentSignupPage(tournamentId: id));
+          return BeamPage(
+              key: ValueKey("tournament-signup-page"),
+              child: TournamentSignupPage(tournamentId: id));
+        },
+        '/tournament/:id/settings': (context, state, data) {
+          final id = int.parse(state.pathParameters['id']!);
+
+          return BeamPage(
+            key: ValueKey(
+                "tournament_settings_page_${id}_${DateTime.now().microsecondsSinceEpoch}"),
+            child: FutureBuilder(
+                future: Future.wait([
+                  Formatter.formatRefereesFromResponse(
+                      TokenManager.dio.get("/tournament/$id/referee")),
+                ]),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return SizedBox();
+                  return TournamentSettingsPage(
+                    referees: snapshot.data![0],
+                    tournamentId: id,
+                  );
+                }),
+          );
         },
         '/profile': (context, state, data) => ProfilePage(),
       },
@@ -117,60 +155,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-Future<Tournament> formatTournamentFromResponse(Future<Response> response) async {
-  var data = (await response).data;
-
-  return Tournament.fromRocket(data);
-}
-
-Future<List<Participant>> formatParticipantsFromResponse(Future<Response<dynamic>> response) async {
-  var data = (await response).data;
-
-  List<Participant> participants = [];
-
-  for (dynamic participant in data) {
-    participants.add(Participant.fromRocket(participant));
-  }
-  return participants;
-}
-
-Future<List<List<Bracket>>> formatBracketsFromResponse(Future<Response<dynamic>> response) async {
-  List<List<Bracket>> brackets = [];
-
-  var data = (await response).data;
-
-  Map<String, dynamic> initial_raw =
-      data.firstWhere((element) => element["next_match_id"] == null);
-  data.remove(initial_raw);
-
-  Bracket initial = Bracket.fromMap(initial_raw);
-
-  brackets.add([initial]);
-
-  List<int> idsForNextRound = [initial.id];
-  List lastRound = [];
-  while (data.isNotEmpty) {
-    print("LOOP");
-    if (lastRound == data) {
-      throw Exception("Loop detected during bracket creation");
-    }
-    lastRound = data;
-    List<Bracket> currentRound = [];
-    List<int> idsForThisRound = idsForNextRound;
-    idsForNextRound = [];
-    for (Map<String, dynamic> curr in data) {
-      if (idsForThisRound.contains(curr["next_match_id"])) {
-        currentRound.add(Bracket.fromMap(curr));
-        idsForNextRound.add(curr["id"]);
-      }
-    }
-    brackets.add(currentRound);
-    for (Bracket bracket in currentRound) {
-      data.removeWhere((val) => val["id"] == bracket.id);
-    }
-  }
-
-  return brackets;
-}
-

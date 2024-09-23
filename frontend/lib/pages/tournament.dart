@@ -7,6 +7,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:frontend/models/bracket.dart';
 import 'package:frontend/models/participant.dart';
 import 'package:frontend/models/tournament.dart';
+import 'package:frontend/models/tournament_permissions.dart';
 import 'package:frontend/tokenmanager.dart';
 import 'package:frontend/widgets/brackets_display.dart';
 import 'package:frontend/widgets/menu_area.dart';
@@ -16,11 +17,12 @@ import 'package:frontend/widgets/title_text.dart';
 enum Pages { Players, Brackets }
 
 class TournamentPage extends StatelessWidget {
-  const TournamentPage({super.key, required this.tournament, required this.brackets, required this.players});
+  const TournamentPage({super.key, required this.tournament, required this.brackets, required this.players, required this.permissions});
 
   final Tournament tournament;
   final List<List<Bracket>> brackets;
   final List<Participant> players;
+  final TournamentPermissions permissions;
 
   @override
   Widget build(BuildContext context) {
@@ -32,10 +34,15 @@ class TournamentPage extends StatelessWidget {
             ElevatedButton(
                 onPressed: () {
                   Beamer.of(context).beamToNamed(
-                      "/tournament/${tournament.id}/signup",
-                      replaceRouteInformation: true);
+                      "/tournament/${tournament.id}/signup");
                 },
-                child: Text("Sign up"))
+                child: Text("Sign up")),
+            if (true)
+              IconButton(onPressed: () {
+                Beamer.of(context).beamToNamed(
+                  "/tournament/${tournament.id}/settings"
+                );
+              }, icon: Icon(Icons.settings))
           ],
           homeButton: true,
           child: Container(

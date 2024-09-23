@@ -11,7 +11,7 @@ pub fn generate_brackets(tournament: &Tournament) {
     
 }
 
-pub fn generate_32_player_tournament(tournament: &Tournament) {
+pub fn generate_32_player_tournament(_tournament: &Tournament) {
     todo!()
 }
 

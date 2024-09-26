@@ -81,6 +81,10 @@ class Formatter {
     return brackets;
   }
 
+  static Future<Bracket> formatBracketFromResponse(Future<Response<dynamic>> response) async {
+    return Bracket.fromMap((await response).data);
+  }
+
   static Future<TournamentPermissions> formatTournamentPermissionsFromResponse(Future<Response> response) async {
     var resp = (await response).data;
     print("GOT RESPONSE FOR PERMS");

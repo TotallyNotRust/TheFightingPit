@@ -107,7 +107,7 @@ class _NewTournamentPageState extends State<NewTournamentPage> {
               CupertinoButton(
                   child: Text("Create"),
                   onPressed: () async {
-                    var response = await TokenManager.dio
+                    await TokenManager.dio
                         .post("/tournament/new", data: {
                       "name": name.text,
                       "slots": slots,

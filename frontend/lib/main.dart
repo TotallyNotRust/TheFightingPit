@@ -14,6 +14,7 @@ import 'package:frontend/pages/homescreen.dart';
 import 'package:frontend/pages/login_signin.dart';
 import 'package:frontend/pages/newtournament.dart';
 import 'package:frontend/pages/profile.dart';
+import 'package:frontend/pages/ref_match.dart';
 import 'package:frontend/pages/tournament.dart';
 import 'package:frontend/pages/tournament_settings.dart';
 import 'package:frontend/pages/tournaments.dart';
@@ -78,13 +79,17 @@ class MyApp extends StatelessWidget {
                   Formatter.formatParticipantsFromResponse(
                     TokenManager.dio.get("/tournament/$id/players"),
                   ),
-                  TokenManager.tokenIsValid ?
-                  Formatter.formatTournamentPermissionsFromResponse(
-                    TokenManager.dio.get("/tournament/$id/permissions"),
-                  ) : Future(() => TournamentPermissions.none())
+                  TokenManager.tokenIsValid
+                      ? Formatter.formatTournamentPermissionsFromResponse(
+                          TokenManager.dio.get("/tournament/$id/permissions"),
+                        )
+                      : Future(() => TournamentPermissions.none())
                 ]),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) return Scaffold(body: Text("SWAG"),);
+                  if (!snapshot.hasData)
+                    return Scaffold(
+                      body: Text("SWAG"),
+                    );
                   return TournamentPage(
                       tournament: snapshot.data![0] as Tournament,
                       brackets: snapshot.data![1] as List<List<Bracket>>,
@@ -115,6 +120,32 @@ class MyApp extends StatelessWidget {
                   if (!snapshot.hasData) return SizedBox();
                   return TournamentSettingsPage(
                     referees: snapshot.data![0],
+                    tournamentId: id,
+                  );
+                }),
+          );
+        },
+        '/tournament/:id/matches/:bracket_id': (context, state, data) {
+          final id = int.parse(state.pathParameters['id']!);
+          final bracket_id = int.parse(state.pathParameters['bracket_id']!);
+
+          return BeamPage(
+            key: ValueKey(
+                "tournament_settings_page_${id}_${DateTime.now().microsecondsSinceEpoch}"),
+            child: FutureBuilder(
+                future: Future.wait([
+                  Formatter.formatBracketFromResponse(
+                    TokenManager.dio.get("/tournament/$id/bracket/$bracket_id"),
+                  ),
+                  Formatter.formatParticipantsFromResponse(
+                    TokenManager.dio.get("/tournament/$id/players"),
+                  ),
+                ]),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return SizedBox();
+                  return RefMatchPage(
+                    bracket: snapshot.data![0] as Bracket,
+                    players: snapshot.data![1] as List<Participant>,
                     tournamentId: id,
                   );
                 }),

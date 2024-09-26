@@ -56,6 +56,7 @@ class TournamentPage extends StatelessWidget {
                       tournamentId: tournament.id,
                       brackets: brackets,
                       players: players,
+                      permissions: permissions,
                     ),
                   ),
                 );

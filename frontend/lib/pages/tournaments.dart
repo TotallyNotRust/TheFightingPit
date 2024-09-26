@@ -49,8 +49,7 @@ class _TournamentsPageState extends State<TournamentsPage> {
                 Padding(
                   padding: EdgeInsets.all(8.0),
                   child: FutureBuilder(
-                      future: TokenManager.dio
-                          .get("/tournament/list"),
+                      future: TokenManager.dio.get("/tournament/list"),
                       builder: (context, snapshot) {
                         if (!snapshot.hasData) {
                           return const SpinKitCubeGrid(
@@ -70,7 +69,9 @@ class _TournamentsPageState extends State<TournamentsPage> {
                               itemBuilder: (context, i) {
                                 return Padding(
                                   padding: const EdgeInsets.all(8.0),
-                                  child: TournamentListElement(tournament: Tournament.fromRocket(body[i])),
+                                  child: TournamentListElement(
+                                      tournament:
+                                          Tournament.fromRocket(body[i])),
                                 );
                               },
                             ),
@@ -80,6 +81,35 @@ class _TournamentsPageState extends State<TournamentsPage> {
                 )
               ],
             )),
+      ),
+    );
+  }
+}
+
+class MyWidget extends StatefulWidget {
+  const MyWidget({super.key});
+
+  @override
+  State<MyWidget> createState() => _MyWidgetState();
+}
+
+class _MyWidgetState extends State<MyWidget> {
+  int count = 0;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          Text("$count"),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                count++;
+              });
+            },
+            icon: Icon(Icons.plus_one),
+          )
+        ],
       ),
     );
   }

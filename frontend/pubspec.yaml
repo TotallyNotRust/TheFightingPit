@@ -72,6 +72,7 @@ flutter:
   assets:
     - assets/tfp_logo.png
     - assets/tfp_logo_background.png
+    - assets/.env
 
   fonts:
     - family: KuenstlerScript

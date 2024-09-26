@@ -10,12 +10,12 @@ use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use regex::Regex;
 use rocket::http::Status;
 use rocket::serde::json::Json;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Login {
-    email: String,
-    password: String,
+    pub email: String,
+    pub password: String,
 }
 
 #[post("/new", format = "application/json", data = "<new_user_json>")]

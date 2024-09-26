@@ -14,7 +14,7 @@ use crate::{
     schema::{
         bracket_match::{
             dsl::{bracket_match, id as b_id, starting_round, tournament_id as bt_id},
-            player1_id, player2_id, score_1, score_2,
+            player1_id, player2_id, score_1, score_2, winner_id,
         },
         participant::dsl::{participant, tournament_id as pt_id, user_id as pu_id},
         referee::dsl::{id as r_id, referee, tournament_id as rt_id, user_id as ru_id},
@@ -68,6 +68,16 @@ pub fn get_brackets(id: u64) -> Result<Json<Vec<BracketMatch>>, Status> {
     return match bracket_match
         .filter(bt_id.eq(id))
         .load::<BracketMatch>(&mut establish_connection())
+    {
+        Ok(n) => Ok(Json(n)),
+        Err(_) => Err(Status::NotFound),
+    };
+}
+#[get("/<id>/bracket/<bracket_id>")]
+pub fn get_bracket(id: u64, bracket_id: u64) -> Result<Json<BracketMatch>, Status> {
+    return match bracket_match
+        .filter(bt_id.eq(id).and(b_id.eq(bracket_id)))
+        .first::<BracketMatch>(&mut establish_connection())
     {
         Ok(n) => Ok(Json(n)),
         Err(_) => Err(Status::NotFound),
@@ -289,9 +299,10 @@ pub fn add_participant(
 }
 
 #[derive(Deserialize)]
-struct Scoreline {
+pub struct Scoreline {
     pub score_1: u32,
     pub score_2: u32,
+    pub final_score: bool
 }
 
 // TODO: It may be nice to implement some kind of lock to avoid dataraces in the future, but for now it is only intended to have
@@ -309,9 +320,9 @@ pub fn update_score(
     let conn = &mut establish_connection();
     let user_id = validated_user.user.id;
     // Get the bracket
-    let Ok(Some(_)) = bracket_match
+    let Ok(Some(bracket)) = bracket_match
         .filter(b_id.eq(bracket_id).and(bt_id.eq(id)))
-        .load::<BracketMatch>(conn)
+        .first::<BracketMatch>(conn)
         .optional()
     else {
         return Err(Status::NotFound);
@@ -334,6 +345,46 @@ pub fn update_score(
             score_2.eq(scoreline.0.score_2),
         ))
         .execute(conn);
+
+    if scoreline.final_score && bracket.next_match_id != None {
+        let winner: Option<u64>;
+        // Determine the winner
+        if bracket.player1_id == None && bracket.player2_id == None {
+            return Ok(""); // If no players, then do not move forward
+        }
+
+        if bracket.player1_id != None && bracket.player2_id != None {
+            if scoreline.0.score_1 > scoreline.0.score_2 {
+                winner = bracket.player1_id;
+            } else {
+                winner = bracket.player2_id;
+            }
+        } else if bracket.player1_id != None {
+            winner = bracket.player1_id;
+        } else if bracket.player2_id != None {
+            winner = bracket.player2_id;
+        } else {
+            winner = None;  
+        }
+
+
+        let mut next_match: BracketMatch = 
+            bracket_match.filter(b_id.eq(bracket.next_match_id.expect("Next match id is both None and Some"))).first::<BracketMatch>(conn).expect("Couldn't load next match");
+
+
+        if next_match.player1_id == None {
+            next_match.player1_id = winner;
+        } else if next_match.player2_id == None {
+            next_match.player2_id = winner;
+        } else {
+            println!("Warning, could not move player forward");
+        }
+
+        let _ = update(bracket_match)
+        .filter(b_id.eq(bracket.next_match_id.expect("Next match id is both None and Some")))
+        .set(next_match)
+        .execute(conn); 
+    }
 
     Ok("")
 }
